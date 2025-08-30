@@ -2,11 +2,15 @@
 const express = require('express');
 const router = express.Router();
 // Clean up imports to bring in all functions at once
-const { registerUser, loginUser, getMe } = require('../controllers/authController');
+const { registerUser, loginUser, getMe, verifyOTP, resendOTP } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
 // register route
 router.post('/register', registerUser);
+
+// OTP verification routes
+router.post('/verify-otp', verifyOTP);
+router.post('/resend-otp', resendOTP);
 
 // login route
 router.post('/login', loginUser);
