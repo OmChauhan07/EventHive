@@ -7,7 +7,9 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
-    }
+    },
+    debug: true, // Enable debug output
+    logger: true // Log information about the transport
 });
 
 // Generate a random 4-digit OTP
@@ -18,6 +20,12 @@ const generateOTP = () => {
 // Send OTP via email
 const sendOTPEmail = async (email, otp) => {
     try {
+        console.log('Attempting to send email to:', email);
+        console.log('Using email credentials:', { 
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS ? '******' : 'not set'
+        });
+        
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: email,
@@ -33,7 +41,8 @@ const sendOTPEmail = async (email, otp) => {
             `
         };
 
-        await transporter.sendMail(mailOptions);
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent successfully:', info.response);
         return true;
     } catch (error) {
         console.error('Error sending email:', error);

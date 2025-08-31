@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEvents } from '../../contexts/EventContext';
 import { Plus, Minus, Calendar, MapPin, Tag, DollarSign, Ticket, Globe } from 'lucide-react';
 
-const CreateEventPage = () => {
+const EditEventPage = () => {
+  const { id } = useParams();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -12,7 +13,7 @@ const CreateEventPage = () => {
     location: '',
     category: '',
     image: '',
-    isPublished: true,
+    isPublished: false,
   });
   
   const [ticketTypes, setTicketTypes] = useState([
@@ -21,9 +22,10 @@ const CreateEventPage = () => {
   
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   
   const { user } = useAuth();
-  const { addEvent } = useEvents();
+  const { updateEvent } = useEvents();
   const navigate = useNavigate();
 
   const categories = [
@@ -34,6 +36,56 @@ const CreateEventPage = () => {
     'Community',
     'Other'
   ];
+
+  useEffect(() => {
+    if (user && user.role === 'Organizer') {
+      fetchEvent();
+    }
+  }, [user, id]);
+
+  const fetchEvent = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/events/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const eventData = await response.json();
+        
+        // Format date for datetime-local input
+        const eventDate = new Date(eventData.date);
+        const formattedDate = eventDate.toISOString().slice(0, 16);
+        
+        setFormData({
+          title: eventData.title,
+          description: eventData.description,
+          date: formattedDate,
+          location: eventData.location,
+          category: eventData.category,
+          image: eventData.image || '',
+          isPublished: eventData.isPublished,
+        });
+        
+        if (eventData.ticketTypes && eventData.ticketTypes.length > 0) {
+          const formattedTickets = eventData.ticketTypes.map(ticket => ({
+            ...ticket,
+            saleStartDate: new Date(ticket.saleStartDate).toISOString().slice(0, 16),
+            saleEndDate: new Date(ticket.saleEndDate).toISOString().slice(0, 16),
+          }));
+          setTicketTypes(formattedTickets);
+        }
+      } else {
+        setErrors({ general: 'Failed to fetch event data' });
+      }
+    } catch (error) {
+      setErrors({ general: 'Network error. Please try again.' });
+    } finally {
+      setFetchLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -80,8 +132,8 @@ const CreateEventPage = () => {
         })),
       };
 
-      const response = await fetch('http://localhost:5000/api/events', {
-        method: 'POST',
+      const response = await fetch(`http://localhost:5000/api/events/${id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -92,11 +144,11 @@ const CreateEventPage = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Add the new event to the EventContext
-        addEvent(data);
+        // Update the event in the EventContext
+        updateEvent(data);
         navigate('/');
       } else {
-        setErrors({ general: data.message || 'Failed to create event' });
+        setErrors({ general: data.message || 'Failed to update event' });
       }
     } catch (error) {
       setErrors({ general: 'Network error. Please try again.' });
@@ -116,13 +168,24 @@ const CreateEventPage = () => {
     );
   }
 
+  if (fetchLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-teal-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading event data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <Calendar className="mx-auto h-16 w-16 text-teal-500 mb-4" />
-          <h1 className="text-4xl font-bold text-white mb-4">Create New Event</h1>
-          <p className="text-xl text-gray-400">Bring your vision to life and connect with your audience</p>
+          <h1 className="text-4xl font-bold text-white mb-4">Edit Event</h1>
+          <p className="text-xl text-gray-400">Update your event details</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -386,7 +449,7 @@ const CreateEventPage = () => {
                   className="h-5 w-5 rounded border-gray-600 text-teal-500 focus:ring-teal-500 bg-gray-700"
                 />
                 <label htmlFor="isPublished" className="text-gray-300">
-                  Publish this event immediately (make visible on dashboards)
+                  Publish this event (make visible on dashboards)
                 </label>
               </div>
               <p className="text-gray-400 text-sm mt-2 ml-8">
@@ -408,7 +471,7 @@ const CreateEventPage = () => {
                 disabled={loading}
                 className="bg-teal-500 hover:bg-teal-600 disabled:bg-teal-500/50 text-white font-medium py-3 px-8 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-gray-800 flex items-center"
               >
-                {loading ? 'Creating...' : 'Create Event'}
+                {loading ? 'Updating...' : 'Update Event'}
                 <Calendar className="h-5 w-5 ml-2" />
               </button>
             </div>
@@ -419,4 +482,4 @@ const CreateEventPage = () => {
   );
 };
 
-export default CreateEventPage;
+export default EditEventPage;

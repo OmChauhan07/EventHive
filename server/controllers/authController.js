@@ -2,7 +2,11 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
+// Use real email service for sending actual emails
 const { generateOTP, sendOTPEmail } = require('../utils/emailService');
+// If you want to use mock email service for testing, uncomment the line below
+// const { generateOTP, sendOTPEmail } = require('../utils/mockEmailService');
 
 // to register a user
 const registerUser = async (req, res) => {
@@ -32,12 +36,17 @@ const registerUser = async (req, res) => {
     user.password = await bcrypt.hash(password, salt);
 
     // Generate OTP
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const otp = generateOTP();
     user.otp = otp;
     user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes validity
 
     // saves user to db
     await user.save();
+    
+    // Send OTP email
+    const emailSent = await sendOTPEmail(email, otp);
+    console.log('Email sending attempt:', emailSent ? 'Success' : 'Failed');
+    console.log('OTP generated:', otp);
 
     // Return success without token
     res.status(201).json({ 
@@ -148,10 +157,15 @@ const resendOTP = async (req, res) => {
     }
 
     // Generate new OTP
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const otp = generateOTP();
     user.otp = otp;
     user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes validity
     await user.save();
+    
+    // Send OTP email
+    const emailSent = await sendOTPEmail(email, otp);
+    console.log('Email resending attempt:', emailSent ? 'Success' : 'Failed');
+    console.log('OTP regenerated:', otp);
 
     res.json({ message: 'OTP resent successfully' });
   } catch (err) {

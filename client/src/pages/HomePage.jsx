@@ -1,31 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ArrowDown, Sparkles, Users, Calendar } from 'lucide-react';
 import EventCard from '../components/events/EventCard';
+import { useEvents } from '../contexts/EventContext';
 
 const HomePage = () => {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  const fetchEvents = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/events');
-      if (response.ok) {
-        const data = await response.json();
-        setEvents(data);
-      } else {
-        setError('Failed to fetch events');
-      }
-    } catch (err) {
-      setError('Network error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { events, loading, error, fetchEvents } = useEvents();
 
   const scrollToEvents = () => {
     document.getElementById('events-section')?.scrollIntoView({

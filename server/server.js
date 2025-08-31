@@ -25,6 +25,9 @@ app.use('/api/bookings', require('./routes/bookings'));
 // add routes for user-specific data (like fetching a user's own tickets)
 app.use('/api/users', require('./routes/users'));
 
+// Debug routes - only for development
+app.use('/api/auth/debug', require('./routes/debug'));
+
 // gives msg if the server is running or not
 app.get('/', (req, res) => {
   res.send('API is running successfully!');

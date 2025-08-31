@@ -1,9 +1,10 @@
+// server/routes/users.js
 const express = require('express');
 const router = express.Router();
 const { getMyBookings } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 
-// A logged-in user can get their own bookings
-router.route('/my-bookings').get(protect, getMyBookings);
+// Defines the route GET /api/users/my-bookings
+router.get('/my-bookings', protect, getMyBookings);
 
 module.exports = router;

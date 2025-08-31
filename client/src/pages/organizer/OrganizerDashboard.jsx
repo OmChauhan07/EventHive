@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useEvents } from '../../contexts/EventContext';
 import { Plus, Calendar, Users, DollarSign, Eye, Edit, Trash2 } from 'lucide-react';
+import EventCard from '../../components/events/EventCard';
 
 const OrganizerDashboard = () => {
   const [events, setEvents] = useState([]);
@@ -9,6 +11,7 @@ const OrganizerDashboard = () => {
   const [error, setError] = useState(null);
   
   const { user } = useAuth();
+  const { fetchEvents: refreshAllEvents } = useEvents();
 
   useEffect(() => {
     if (user && user.role === 'Organizer') {
@@ -142,45 +145,29 @@ const OrganizerDashboard = () => {
                 </Link>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {events.map((event) => (
-                  <div key={event._id} className="bg-gray-700 rounded-lg p-6 border border-gray-600 hover:border-gray-500 transition-colors">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between space-y-4 lg:space-y-0">
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-white mb-2">{event.title}</h3>
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
-                          <span className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            {new Date(event.date).toLocaleDateString()}
-                          </span>
-                          <span className="flex items-center">
-                            <Users className="h-4 w-4 mr-1" />
-                            {event.attendees || 0} attendees
-                          </span>
-                          <span className="flex items-center">
-                            <DollarSign className="h-4 w-4 mr-1" />
-                            ${event.revenue || 0}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Link
-                          to={`/events/${event._id}`}
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View
-                        </Link>
-                        <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </button>
-                        <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </button>
-                      </div>
+                  <div key={event._id} className="relative group">
+                    <EventCard event={event} />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gray-900/80 backdrop-blur-sm p-3 flex justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Link
+                        to={`/events/${event._id}`}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg transition-colors flex items-center"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Link>
+                      <Link
+                        to={`/organizer/edit-event/${event._id}`}
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg transition-colors flex items-center"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Link>
+                      <button className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg transition-colors flex items-center">
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </button>
                     </div>
                   </div>
                 ))}

@@ -48,8 +48,8 @@ const SignupPage = () => {
       const data = await response.json();
 
       if (response.ok) {
-        login(data.token, data.user);
-        navigate('/dashboard');
+        // Redirect to OTP verification page with email
+        navigate('/verify-otp', { state: { email: formData.email } });
       } else {
         setErrors({ general: data.message || 'Registration failed' });
       }
